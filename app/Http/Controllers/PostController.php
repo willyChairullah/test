@@ -10,6 +10,79 @@ use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
+
+    public function createAssignment($id)
+    {
+        return view("assignment.create", compact("id"));
+    }
+
+    public function storeAssignment(Request $request, $id)
+    {
+        $request->validate([
+            "title" => "required|string|max:255",
+            "content" => "nullable|string",
+            "due" => "required",
+            "files.*" => "nullable|file|max:10240",
+        ]);
+
+        $classroom = Classroom::with('members')->find($id);
+        $post = Post::where('id', 1);
+
+        $post = Post::create([
+            "user_id" => Auth::user()->id,
+            "classroom_id" => $classroom->id,
+            "title" => $request->title,
+            "content" => $request->content,
+            "due" => $request->due,
+            "type" => "assignment",
+        ]);
+
+        $this->uploadPostFiles($request, $post);
+        $this->generateSubmissions($post, $classroom);
+        return redirect()->back()->with(["success" => "Tugas berhasil diupload!"]);
+    }
+
+    public function editAssignment($id, $id_post)
+    {
+        $post = Post::with("postFile")->where("id", $id_post)->first();
+        return view("assignment.edit", compact("post", "id", "id_post"));
+    }
+
+    public function updateAssignment(Request $request, $id, $id_post)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'due' => 'required',
+            'content' => 'nullable|string',
+            'files.*' => 'nullable|file|max:10240',
+        ]);
+
+        $post = Post::findOrFail($id_post);
+
+        $post->update([
+            'title' => $request->title,
+            'content' => $request->content,
+            'due' => $request->due,
+        ]);
+
+        if ($request->deleted_files) {
+            $ids = explode(',', $request->deleted_files);
+            foreach ($ids as $fileId) {
+                $file = PostFile::find($fileId);
+                if ($file) {
+                    Storage::delete($file->file_path);
+                    $file->delete();
+                }
+            }
+        }
+
+        if ($request->hasFile('files')) {
+            $this->uploadPostFiles($request, $post);
+        }
+
+        return redirect()->back()->with('success', 'Assignment berhasil diupdate!');
+    }
+
     private function uploadPostFiles(Request $request, Post $post)
     {
         $uploadedFiles = [];
