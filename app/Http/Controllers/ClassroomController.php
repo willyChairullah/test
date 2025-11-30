@@ -49,6 +49,13 @@ class ClassroomController extends Controller
         }
     }
 
+    public function out(Request $request, $id)
+    {
+        $userId = Auth::user()->id;
+        MemberClass::where("id", $id)->where("user_id", $userId)->delete();
+        return redirect()->back();
+    }
+
     public function joinClass(Request $request)
     {
         $validation = $request->validate([
