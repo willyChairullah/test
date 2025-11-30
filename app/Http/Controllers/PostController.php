@@ -161,6 +161,13 @@ class PostController extends Controller
         return $uploadedFiles;
     }
 
+    public function deletePost(Request $request, $id, $id_post)
+    {
+        Post::where("id", $id_post)->delete();
+        Submission::where("post_id")->delete();
+        return redirect()->back();
+    }
+
     public function deletePostFile($id, $id_file)
     {
         $file = PostFile::findOrFail($id_file);

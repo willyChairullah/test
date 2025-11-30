@@ -1,38 +1,65 @@
+@props(['post', 'classroom', 'isAuthor'])
+
 <div class="card px-4 py-2">
     <div class="d-flex gap-3 align-items-start">
         <img class="rounded-circle object-fit-cover mt-3"
             width="40"
             height="40"
-            src="https://image.idntimes.com/post/20240603/tangkapan-layar-2024-06-03-pukul-164258-besar-d700cd64f60de196027d0e006f5c0eca.jpeg">
+            src="{{ $post->user->photo }}">
 
         <div class="mt-3">
-            <p class="fs-vs fw-bold">John Doe</p>
+            @if($post->type === 'information')
+            <p class="fs-vs fw-bold">
+                {{ $post->user->firstname . ' ' . $post->user->lastname }}
+            </p>
+            @elseif($post->type === 'assignment')
+            <p class="fs-vs fw-bold">Tugas: {{ $post->title }}</p>
+            @else
+            <p class="fs-vs fw-bold">{{ $post->title }}</p>
+            @endif
 
             <p style="margin-top: -20px;" class="fs-vs text-muted">
-                03 Jun 2024
+                {{ $post->created_at->format('d M Y') }}
             </p>
 
-            <p class="fs-vs">
-                Ini adalah contoh konten informasi yang ditampilkan secara statis.
-            </p>
+            @if($post->type === 'information')
+            <p class="fs-vs">{{ $post->content }}</p>
+            @endif
         </div>
     </div>
 
     <div class="d-flex justify-content-between border-top" style="margin-left: 57px;">
-        <a class="fs-vs" href="">
+        <a class="fs-vs" href="{{ route('detailPost', [$classroom->id, $post->id]) }}">
             Selengkapnya
         </a>
 
+        @if($isAuthor)
         <div class="d-flex align-items-center gap-2">
-            <a class="fs-vs text-dark text-decoration-none" href="">
+
+            @if($post->type === 'assignment')
+            <a class="fs-vs text-dark text-decoration-none" href="{{ route('editAssignment', ['id' => $classroom->id, 'id_post' => $post->id]) }}">Edit</a>
+            @elseif($post->type === 'material')
+            <a class="fs-vs text-dark text-decoration-none"
+                href="{{ route('editMaterial', ['id' => $classroom->id, 'id_post' => $post->id]) }}">
                 Edit
             </a>
+            @else
+            <a class="fs-vs text-dark text-decoration-none"
+                data-bs-toggle="modal"
+                data-bs-target="#editInformation{{ $post->id }}">
+                Edit
+            </a>
+            @endif
 
-            <form action="" method="post">
-                <button class="border-0 bg-white fs-vs text-muted">
+            <form action="{{ route('deletePost', ['id' => $classroom->id, 'id_post' => $post->id]) }}" method="post">
+                @csrf
+                @method('DELETE')
+                <button onclick="return confirm('Yakin untuk dihapus?')" class="border-0 bg-white fs-vs text-muted">
                     Delete
                 </button>
             </form>
+
         </div>
+        @endif
     </div>
 </div>
